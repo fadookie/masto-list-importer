@@ -1,26 +1,95 @@
 import assert from 'assert';
+import { login, MastoError } from 'masto';
+import _ from 'lodash';
 
 const accessToken = require('./.access-token.json');
-import { login } from 'masto';
 
 async function main() {
-  const masto = await login({
-    url: 'https://social.coop',
-    accessToken,
-  });
+  try {
+    const masto = await login({
+      url: 'https://social.coop',
+      accessToken,
+    });
 
-  const account = await masto.accounts.lookup({ acct: "Eliot_L@mastodon.social"});
-  assert.ok(account);
+    const rows: [string, string][] = [
+      ["Test1", "ferrata@mastodon.cloud"],
+      ["Test2", "devonrubin@mastodon.art"],
+      ["Test2", "alison@toot.site"],
+      ["Test List", "Gargron@mastodon.social"],
+    ];
+    const inputLists = _.chain(rows)
+      .map(row => row[0])
+      .uniq()
+      .value();
+    const inputAddresses = rows.map(row => row[1]);
+    
+    // Create any missing lists
+    const cloudListsInitial = await masto.lists.fetchAll();
+    const preExistingLists = cloudListsInitial.filter(list => inputLists.includes(list.title));
+    const newListNames = _.difference(inputLists, preExistingLists.map(list => list.title));
 
-  const lists = await masto.lists.fetchAll();
+    const newLists = await Promise.all(newListNames.map(async title => (
+      await masto.lists.create({ title })
+    )));
 
-  const list = await masto.lists.fetch(lists[0].id);
+    const allLists = [...preExistingLists, ...newLists];
 
-  console.log("Got account:", account.acct,  " lists:", lists, " list:", list);
+    console.log("preExistingLists:", preExistingLists, "inputLists:", inputLists, "newListNames:", newListNames, 'allLists:', allLists);
 
-  await masto.lists.addAccount(list.id, { accountIds: [account.id]});
+    console.log(`Loaded ${rows.length} account candidates`);
+    
+    // Remove rows for accounts that were already on the list
+    for (const list of allLists) {
+      const accountIterator = await masto.lists.getAccountIterator(list.id);
+
+      for await (const accountPage of accountIterator) {
+        accountPage.forEach((account) => {
+          _.remove(rows, row => (
+            row[0] === list.title && row[1] === account.acct
+          ));
+        });
+      }
+    }
+
+    console.log(`Deduped account candidates, ${rows.length} accounts remain.`);
+
+    const accountsByList = _.groupBy(rows, row => row[0]);
+    console.log('accountsByList:', accountsByList); 
+
+    for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
+      // Look up account IDs of remaining accounts on the list
+      const accounts = await Promise.all(rowsForAccount.map(async (row) => {
+        const account = await masto.accounts.lookup({ acct: row[1] }); // TODO: optimize by using cached account object if it was already in memory
+        assert.ok(account);
+        return account;
+      }));
+      const accountIds = accounts.map(account => account.id);
+
+      console.log(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
+
+      // Add accounts to each list
+      for (const row of rowsForAccount) {
+        const list = allLists.find(l => l.title === row[0]);
+        assert.ok(list)
+        try {
+          console.log(`Adding ${accountIds.length} accounts to List "${list.title}"`);
+          await masto.lists.addAccount(list.id, { accountIds });
+        } catch (e) {
+          console.error("inner try-catch", e);
+        }
+      }
+    }
+
+    console.log("Done.");
+  } catch (e) {
+    if (e instanceof MastoError) {
+      console.error("try-catch", e, " details", e.details, "desc:", e.description);
+    } else {
+      console.error("try-catch", e);
+    }
+  }
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("Promise#catch", error);
 });
