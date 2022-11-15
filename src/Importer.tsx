@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { importLists, assertOk, Config } from './import-lists.lib';
+import { Instructions } from './Instructions';
 
 interface Props {
 }
@@ -38,18 +39,30 @@ export function Importer(props: Props): JSX.Element {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // console.log("submit");
-    // console.log('file content',  csvString.current)
-    // console.log("instance", instance);
-    // console.log("access key", accessKey);
 
     logLines.current = [];
 
-    assertOk(csvString.current);
+    const instanceTrim = instance.trim();
+    const accessKeyTrim = accessKey.trim();
+
+    if (instanceTrim.length === 0) {
+      alert("No instance found, please select one before submitting.");
+      return;
+    }
+
+    if (accessKeyTrim.length === 0) {
+      alert("No access key found, please select one before submitting.");
+      return;
+    }
+
+    if (!csvString.current) {
+      alert("No lists.csv found, please select one before submitting.");
+      return;
+    }
 
     const config: Config = {
-      instance,
-      access_token: accessKey,
+      instance: instanceTrim,
+      access_token: accessKeyTrim,
       logger: appendLogLine,
     }
 
@@ -58,6 +71,9 @@ export function Importer(props: Props): JSX.Element {
   
   return(
       <div>
+        <Instructions />
+        <hr/>
+        <h2>Config</h2>
         <form onSubmit={handleSubmit}>
           <table>
             <tr>
@@ -89,6 +105,7 @@ export function Importer(props: Props): JSX.Element {
           <input type="submit" value="Submit" />
         </form>
         <hr/>
+        <h2>Log:</h2>
         <pre>
           {log}
         </pre>
