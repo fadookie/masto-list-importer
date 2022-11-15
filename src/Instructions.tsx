@@ -18,6 +18,7 @@ export function Instructions(): JSX.Element {
         <li>Click on the name of the application you just created.</li>
       </ol>
       <p>Now, copy &quot;Your access token&quot; listed on the application page into the form below. Also, put the <code>https://</code> URL of your instance into the config.</p>
+      <p>Note that this token is not stored anywhere or sent to any server other than your instance. I don't have my own server for this tool, it simply runs in your browser window and is hosted on a static GitHub page.</p>
       <h2 id="usage">Usage</h2>
       <p>You should have a <code>lists.csv</code> which can be downloaded from the &quot;Data Export&quot; menu under &quot;Import and export&quot; in settings on your other instance.</p>
       <blockquote>
