@@ -58,7 +58,7 @@ async function main() {
 
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
-      const accounts = await Promise.all(rowsForAccount.map(async (row) => {
+      const accounts = await Promise.all(rowsForAccount.map(async (row) => { // TODO: batch these requests
         const account = await masto.accounts.lookup({ acct: row[1] }); // TODO: optimize by using cached account object if it was already in memory
         assert.ok(account);
         return account;
@@ -67,16 +67,14 @@ async function main() {
 
       console.log(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
 
-      // Add accounts to each list
-      for (const row of rowsForAccount) {
-        const list = allLists.find(l => l.title === row[0]);
-        assert.ok(list)
-        try {
-          console.log(`Adding ${accountIds.length} accounts to List "${list.title}"`);
-          await masto.lists.addAccount(list.id, { accountIds });
-        } catch (e) {
-          console.error("inner try-catch", e);
-        }
+      // Add accounts to list
+      const list = allLists.find(l => l.title === listName);
+      assert.ok(list)
+      try {
+        console.log(`Adding ${accountIds.length} accounts to List "${list.title}"`);
+        await masto.lists.addAccount(list.id, { accountIds });
+      } catch (e) {
+        console.error("inner try-catch", e);
       }
     }
 
