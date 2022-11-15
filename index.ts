@@ -6,7 +6,7 @@ import Parser, { Row } from '@gregoranders/csv';
 
 import _ from 'lodash';
 
-const accessToken = require('./.access-token.json');
+const accessToken = require('./access-token.json');
 
 async function main() {
   try {

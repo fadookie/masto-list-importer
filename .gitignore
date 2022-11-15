@@ -130,4 +130,4 @@ dist
 .pnp.*
 
 # Project stuff
-.access-token.json
+/access-token.json
