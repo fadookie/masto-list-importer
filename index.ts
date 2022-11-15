@@ -1,34 +1,28 @@
 import assert from 'assert';
 import process from 'process';
 import { readFileSync } from 'fs';
-import { login, MastoError, MastoRateLimitError } from 'masto';
+import { login, MastoRateLimitError } from 'masto';
 import Parser, { Row } from '@gregoranders/csv';
 
 import _ from 'lodash';
 
-const accessToken = require('./access-token.json');
+const config = require('./config.json');
 
 async function main() {
   try {
-    // const rows: [string, string][] = [
-    //   ["Test1", "ferrata@mastodon.cloud"],
-    //   ["Test1", "JoeSondow@tabletop.social"],
-    //   ["Test2", "devonrubin@mastodon.art"],
-    //   ["Test2", "alison@toot.site"],
-    //   ["Test List", "Gargron@mastodon.social"],
-    // ];
-
     const csvPath = process.argv[2];
     const csvString = readFileSync(csvPath, 'utf8');
 
     const parser = new Parser();
     const rowsReadonly = parser.parse(csvString);
     const rows: Row[] = [...rowsReadonly];
-    console.log(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
+    // console.log(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
+
+    console.log(`Logging in to instance: ${config.instance}`);
 
     const masto = await login({
-      url: 'https://social.coop',
-      accessToken,
+      url: config.instance,
+      accessToken: config.access_token,
     });
 
     const inputLists = _.chain(rows)
@@ -42,13 +36,16 @@ async function main() {
     const preExistingLists = cloudListsInitial.filter(list => inputLists.includes(list.title));
     const newListNames = _.difference(inputLists, preExistingLists.map(list => list.title));
 
-    const newLists = await Promise.all(newListNames.map(async title => ( // TODO: Batch this
-      await masto.lists.create({ title })
-    )));
+    console.log("Found pre-existing lists: ", preExistingLists.map(l => l.title));
+
+    const newLists = await Promise.all(newListNames.map(title => { // TODO: Batch this
+      console.log(`Creating list "${title}"`);
+      return masto.lists.create({ title })
+    }));
 
     const allLists = [...preExistingLists, ...newLists];
 
-    console.log("preExistingLists:", preExistingLists, "inputLists:", inputLists, "newListNames:", newListNames, 'allLists:', allLists);
+    // console.log("preExistingLists:", preExistingLists, "inputLists:", inputLists, "newListNames:", newListNames, 'allLists:', allLists);
 
     console.log(`Loaded ${rows.length} account candidates`);
     
@@ -85,7 +82,7 @@ async function main() {
     console.log(`Cleaned account candidates, ${rows.length} accounts remain.`);
 
     const accountsByList = _.groupBy(rows, row => row[0]);
-    console.log('accountsByList:', accountsByList); 
+    // console.log('accountsByList:', accountsByList); 
 
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
@@ -105,7 +102,7 @@ async function main() {
         console.log(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
         await masto.lists.addAccount(list.id, { accountIds });
       } catch (e) {
-        console.error("inner try-catch", e);
+        console.error(`💥 Error adding accounts to list "${list.title}":`, e);
       }
     }
 
@@ -113,14 +110,14 @@ async function main() {
   } catch (e: any) {
     if (typeof e === 'object' && e !== null && 'name' in e && e.name === "MastoRateLimitError") { // instanceof check doesn't work, sus
       const rateError = e as MastoRateLimitError;
-      console.error(`You are being rate limited by your instance. Please wait a while and try again after ${rateError.reset}.`);
+      console.error(`🛑 You are being rate limited by your instance. Please wait a while and try again${rateError.reset ? ` after ${rateError.reset}` : ''}.`);
       console.error(rateError, " details", rateError.details, "desc:", rateError.description);
     } else {
-      console.error("try-catch generic:", e);
+      console.error("💥 Error:", e);
     }
   }
 }
 
 main().catch((error) => {
-  console.error("Promise#catch", error);
+  console.error("💥 Error:", error);
 });

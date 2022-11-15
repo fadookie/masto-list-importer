@@ -23,7 +23,7 @@ This is a Node.JS script, so you will need to install Node.JS on your system. So
  ```
 
 ## Configuration
-Copy the `access-token.sample.json` file and name it `access-token.json`.
+Copy the `config.sample.json` file and name it `config.json`.
 
 ### Generate an Access Token
 1. Open your mastodon settings page, and then go to the "Development" menu.
@@ -33,8 +33,15 @@ Copy the `access-token.sample.json` file and name it `access-token.json`.
 1. Click "Submit"
 1. Click on the name of the application you just created.
 
-Now, copy "Your access token" listed on the application page into `access-token.json`. It should go in between the quotes, with no spaces on either side. I.e. `"0il6r_q_7suU19123tTA1mITp_Q3g9kf0qUmz51eX4g"`
+Now, copy "Your access token" listed on the application page into `config.json`. It should go in between the quotes, with no spaces on either side. Also, put the `https://` URL of your instance into the config. A finished config should look something like so:
 
+```json
+{
+  "instance": "https://mastodon.social",
+  "access_token": "0il6r_q_7suU19123tTA1mITp_Q3g9kf0qUmz51eX4g"
+}
+
+```
 
 ## Usage
 
