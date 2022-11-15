@@ -4,9 +4,15 @@ This is a tool to import a `lists.csv` from one [Mastodon](https://joinmastodon.
 
 Ideally, this functionality would be incorporated directly into Mastodon's UI (see [mastodon issue #15015](https://github.com/mastodon/mastodon/issues/15015)), but I chose to write this external tool instead as it's a faster way to get up and running without having to wait for a pull request to be merged, released, and rolled out to the instances on the fedi.
 
-This is a command-line tool. As such it is primarily usable by developers, but I will try to explain how to use it here. If you are a non-technical user, you may want to read [a primer on the command line](https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/command-line-101) first.
+# Web UI
 
-If you would like a UI (probably a web UI) for this tool, please react to [this issue](https://github.com/fadookie/masto-list-importer/issues/1) or ping me at [@Eliot_L@social.coop](https://social.coop/@Eliot_L) to let me know there's demand.
+The Web UI for this tool can be found at https://www.eliotlash.com/masto-list-importer/
+
+Instructions for using it are on the page.
+
+# Command Line Interface
+
+This tool also has a command-line interface. As such it is primarily usable by developers, but I will try to explain how to use it here. If you are a non-technical user, you may want to read [a primer on the command line](https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/command-line-101) first.
 
 ## Installation
 This is a Node.JS script, so you will need to install Node.JS on your system. Some options on how to do this:
