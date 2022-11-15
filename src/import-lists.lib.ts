@@ -39,7 +39,7 @@ export async function importLists(config: Config, csvString: string) {
     const preExistingLists = cloudListsInitial.filter(list => inputLists.includes(list.title));
     const newListNames = _.difference(inputLists, preExistingLists.map(list => list.title));
 
-    config.logger("Found pre-existing lists: ", preExistingLists.map(l => l.title));
+    config.logger("Found pre-existing lists:\n", preExistingLists.map(l => l.title).join('\n'));
 
     const newLists = await Promise.all(newListNames.map(title => { // TODO: Batch this
       config.logger(`Creating list "${title}"`);
@@ -105,7 +105,7 @@ export async function importLists(config: Config, csvString: string) {
         config.logger(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
         await masto.lists.addAccount(list.id, { accountIds });
       } catch (e) {
-        console.error(`💥 Error adding accounts to list "${list.title}":`, e);
+        config.logger(`💥 Error adding accounts to list "${list.title}":`, e);
       }
     }
 
@@ -113,10 +113,10 @@ export async function importLists(config: Config, csvString: string) {
   } catch (e: any) {
     if (typeof e === 'object' && e !== null && 'name' in e && e.name === "MastoRateLimitError") { // instanceof check doesn't work, sus
       const rateError = e as MastoRateLimitError;
-      console.error(`🛑 You are being rate limited by your instance. Please wait a while and try again${rateError.reset ? ` after ${rateError.reset}` : ''}.`);
-      console.error(rateError, " details", rateError.details, "desc:", rateError.description);
+      config.logger(`🛑 You are being rate limited by your instance. Please wait a while and try again${rateError.reset ? ` after ${rateError.reset}` : ''}.`);
+      config.logger(rateError, " details", rateError.details, "desc:", rateError.description);
     } else {
-      console.error("💥 Error:", e);
+      config.logger("💥 Error:", e);
     }
   }
 }

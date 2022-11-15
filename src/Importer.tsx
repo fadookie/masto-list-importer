@@ -8,6 +8,13 @@ export function Importer(props: Props): JSX.Element {
   const csvString = useRef<string | null>(null);
   const [instance, setInstance] = useState<string>("");
   const [accessKey, setAccessKey] = useState<string>("");
+  const logLines = useRef<string[]>([]);
+  const [log, setLog] = useState<string>("");
+
+  const appendLogLine = (...args: unknown[]) => {
+    logLines.current.push(args.join(""));
+    setLog(logLines.current.join('\n'));
+  }
 
   const handleFile = (e: ProgressEvent<FileReader>) => {
     const content = e.target?.result;
@@ -31,17 +38,19 @@ export function Importer(props: Props): JSX.Element {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("submit");
-    console.log('file content',  csvString.current)
-    console.log("instance", instance);
-    console.log("access key", accessKey);
+    // console.log("submit");
+    // console.log('file content',  csvString.current)
+    // console.log("instance", instance);
+    // console.log("access key", accessKey);
+
+    logLines.current = [];
 
     assertOk(csvString.current);
 
     const config: Config = {
       instance,
       access_token: accessKey,
-      logger: (...args: unknown[]) => console.log(...args)
+      logger: appendLogLine,
     }
 
     importLists(config, csvString.current);
@@ -50,15 +59,39 @@ export function Importer(props: Props): JSX.Element {
   return(
       <div>
         <form onSubmit={handleSubmit}>
-          <label htmlFor="instance">Instance</label>
-          <input id="instance" type="text" value={instance} onChange={e => setInstance(e.target.value)} /><br/>
-          <label htmlFor="access-key">Access Key</label>
-          <input id="access-key" type="text" value={accessKey} onChange={e => setAccessKey(e.target.value)} /><br/>
-          <label htmlFor="csv">lists.csv</label>
-          <input id="csv" type="file" accept=".csv" onChange={e => 
-              handleChangeFile(e.target.files ? e.target.files[0] : null)} /><br/>
+          <table>
+            <tr>
+              <td>
+                <label htmlFor="instance">Instance</label>
+              </td>
+              <td>
+                <input id="instance" type="text" value={instance} onChange={e => setInstance(e.target.value)} /><br/>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="access-key">Access Key</label>
+              </td>
+              <td>
+                <input id="access-key" type="text" value={accessKey} onChange={e => setAccessKey(e.target.value)} /><br/>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label htmlFor="csv">lists.csv</label>
+              </td>
+              <td>
+                <input id="csv" type="file" accept=".csv" onChange={e => 
+                    handleChangeFile(e.target.files ? e.target.files[0] : null)} /><br/>
+              </td>
+            </tr>
+          </table>
           <input type="submit" value="Submit" />
         </form>
+        <hr/>
+        <pre>
+          {log}
+        </pre>
       </div>
   );
 }
