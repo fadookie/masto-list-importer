@@ -1,7 +1,7 @@
 import assert from 'assert';
 import process from 'process';
 import { readFileSync } from 'fs';
-import { login, MastoError } from 'masto';
+import { login, MastoError, MastoRateLimitError } from 'masto';
 import Parser, { Row } from '@gregoranders/csv';
 
 import _ from 'lodash';
@@ -89,15 +89,20 @@ async function main() {
 
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
-      const accountIds = accounts.map(account => account.id);
+      const accountIds = rowsForAccount.map(row => {
+        const account = accounts.find(x => x.acct === row[1]);
+        if (!account) console.log(`Unable to find cached account for '${row[1]}', skipping.`);
+        return account?.id;
+      })
+      .filter((x): x is string => x !== undefined);
 
-      console.log(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
+      // console.log(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
 
       // Add accounts to list
       const list = allLists.find(l => l.title === listName);
       assert.ok(list)
       try {
-        console.log(`Adding ${accountIds.length} accounts to List "${list.title}"`);
+        console.log(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
         await masto.lists.addAccount(list.id, { accountIds });
       } catch (e) {
         console.error("inner try-catch", e);
@@ -105,11 +110,13 @@ async function main() {
     }
 
     console.log("Done.");
-  } catch (e) {
-    if (e instanceof MastoError) {
-      console.error("try-catch", e, " details", e.details, "desc:", e.description);
+  } catch (e: any) {
+    if (typeof e === 'object' && e !== null && 'name' in e && e.name === "MastoRateLimitError") { // instanceof check doesn't work, sus
+      const rateError = e as MastoRateLimitError;
+      console.error(`You are being rate limited by your instance. Please wait a while and try again after ${rateError.reset}.`);
+      console.error(rateError, " details", rateError.details, "desc:", rateError.description);
     } else {
-      console.error("try-catch", e);
+      console.error("try-catch generic:", e);
     }
   }
 }
