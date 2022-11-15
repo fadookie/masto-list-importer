@@ -1,0 +1,3 @@
+- [ ] Deal with moved accounts
+- [ ] Write documentation
+- [ ] Optimize to reduce number of account lookups
