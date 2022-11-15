@@ -9,6 +9,11 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+"@gregoranders/csv@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@gregoranders/csv/-/csv-0.0.9.tgz#26106de7ee3548a26336b87a049d8e5967c25da9"
+  integrity sha512-2P04H9fv9VYBIKeXxB+PeQW5RqlHdjSTATR9ThkKh376mnJJqReJ/18T2uGiiJGN96n22QeoXY5gzu0++m0g2w==
+
 "@jridgewell/resolve-uri@^3.0.3":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz#2203b118c157721addfe69d47b70465463066d78"

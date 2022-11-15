@@ -1,23 +1,36 @@
 import assert from 'assert';
+import process from 'process';
+import { readFileSync } from 'fs';
 import { login, MastoError } from 'masto';
+import Parser, { Row } from '@gregoranders/csv';
+
 import _ from 'lodash';
 
 const accessToken = require('./.access-token.json');
 
 async function main() {
   try {
+    // const rows: [string, string][] = [
+    //   ["Test1", "ferrata@mastodon.cloud"],
+    //   ["Test1", "JoeSondow@tabletop.social"],
+    //   ["Test2", "devonrubin@mastodon.art"],
+    //   ["Test2", "alison@toot.site"],
+    //   ["Test List", "Gargron@mastodon.social"],
+    // ];
+
+    const csvPath = process.argv[2];
+    const csvString = readFileSync(csvPath, 'utf8');
+
+    const parser = new Parser();
+    const rowsReadonly = parser.parse(csvString);
+    const rows: Row[] = [...rowsReadonly];
+    console.log(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
+
     const masto = await login({
       url: 'https://social.coop',
       accessToken,
     });
 
-    const rows: [string, string][] = [
-      ["Test1", "ferrata@mastodon.cloud"],
-      ["Test1", "JoeSondow@tabletop.social"],
-      ["Test2", "devonrubin@mastodon.art"],
-      ["Test2", "alison@toot.site"],
-      ["Test List", "Gargron@mastodon.social"],
-    ];
     const inputLists = _.chain(rows)
       .map(row => row[0])
       .uniq()
