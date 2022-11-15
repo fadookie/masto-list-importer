@@ -4,6 +4,7 @@
   "description": "Tool to import Mastodon lists from a csv export",
   "author": "Eliot Lash <fadookie@gmail.com>",
   "license": "MIT",
+  "homepage": "https://fadookie.github.io/masto-list-importer",
   "private": false,
   "dependencies": {
     "@gregoranders/csv": "^0.0.9",
@@ -24,13 +25,16 @@
     "web-vitals": "^2.1.0"
   },
   "devDependencies": {
+    "gh-pages": "^4.0.0",
     "ts-node": "^10.9.1"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "tsc && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "predeploy": "yarn run build",
+    "deploy": "gh-pages -d build",
     "import-lists": "ts-node --project tsconfig.cli.json import-lists-cli.ts"
   },
   "eslintConfig": {
