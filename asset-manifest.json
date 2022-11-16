@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/masto-list-importer/static/css/main.4656111c.css",
+    "main.js": "/masto-list-importer/static/js/main.fff4bcd5.js",
+    "static/js/787.361a7df4.chunk.js": "/masto-list-importer/static/js/787.361a7df4.chunk.js",
+    "index.html": "/masto-list-importer/index.html",
+    "main.4656111c.css.map": "/masto-list-importer/static/css/main.4656111c.css.map",
+    "main.fff4bcd5.js.map": "/masto-list-importer/static/js/main.fff4bcd5.js.map",
+    "787.361a7df4.chunk.js.map": "/masto-list-importer/static/js/787.361a7df4.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4656111c.css",
+    "static/js/main.fff4bcd5.js"
+  ]
+}
