@@ -10,7 +10,7 @@ export interface Config {
   logger: Logger;
 }
 
-function assertOk(value: unknown, message?: string): asserts value {
+export function assertOk(value: unknown, message?: string): asserts value {
   if (!value) throw new Error(message);
 }
 
