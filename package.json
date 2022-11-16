@@ -31,7 +31,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "import-lists": "ts-node --project tsconfig.cli.json index.ts"
+    "import-lists": "ts-node --project tsconfig.cli.json import-lists-cli.ts"
   },
   "eslintConfig": {
     "extends": [

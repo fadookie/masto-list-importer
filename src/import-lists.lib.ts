@@ -1,18 +1,18 @@
-import assert from 'assert';
-import process from 'process';
-import { readFileSync } from 'fs';
 import { login, MastoRateLimitError } from 'masto';
 import Parser, { Row } from '@gregoranders/csv';
-
 import _ from 'lodash';
 
-const config = require('./config.json');
+export interface Config {
+  instance: string;
+  access_token: string;
+}
 
-async function main() {
+function assertOk(value: unknown, message?: string): asserts value {
+  if (!value) throw new Error(message);
+}
+
+export async function importLists(config: Config, csvString: string) {
   try {
-    const csvPath = process.argv[2];
-    const csvString = readFileSync(csvPath, 'utf8');
-
     const parser = new Parser();
     const rowsReadonly = parser.parse(csvString);
     const rows: Row[] = [...rowsReadonly];
@@ -51,7 +51,7 @@ async function main() {
     
     // Remove rows for accounts that were already on the list
     for (const list of allLists) {
-      const accountIterator = await masto.lists.getAccountIterator(list.id);
+      const accountIterator = masto.lists.getAccountIterator(list.id);
 
       for await (const accountPage of accountIterator) {
         accountPage.forEach((account) => {
@@ -65,7 +65,7 @@ async function main() {
     // Remove rows for accounts that the user isn't following
     const accounts = await Promise.all(rows.map(async (row) => { // TODO: batch these requests
       const account = await masto.accounts.lookup({ acct: row[1] }); // TODO: optimize by using cached account object if it was already in memory
-      assert.ok(account);
+      assertOk(account);
       return account;
     }));
 
@@ -73,7 +73,7 @@ async function main() {
     for (const relationship of relationships) {
       if (!relationship.following) {
         const accountAddress = accounts.find(x => x.id === relationship.id)?.acct;
-        assert.ok(accountAddress);
+        assertOk(accountAddress);
         _.remove(rows, row => row[1] === accountAddress);
         console.log(`You are not following ${accountAddress}, removing this account.`);
       }
@@ -97,7 +97,7 @@ async function main() {
 
       // Add accounts to list
       const list = allLists.find(l => l.title === listName);
-      assert.ok(list)
+      assertOk(list)
       try {
         console.log(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
         await masto.lists.addAccount(list.id, { accountIds });
@@ -117,7 +117,3 @@ async function main() {
     }
   }
 }
-
-main().catch((error) => {
-  console.error("💥 Error:", error);
-});
