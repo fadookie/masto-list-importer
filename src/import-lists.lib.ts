@@ -2,9 +2,12 @@ import { login, MastoRateLimitError } from 'masto';
 import Parser, { Row } from '@gregoranders/csv';
 import _ from 'lodash';
 
+export type Logger = (message?: any, ...optionalParams: any[]) => void;
+
 export interface Config {
   instance: string;
   access_token: string;
+  logger: Logger;
 }
 
 function assertOk(value: unknown, message?: string): asserts value {
@@ -16,9 +19,9 @@ export async function importLists(config: Config, csvString: string) {
     const parser = new Parser();
     const rowsReadonly = parser.parse(csvString);
     const rows: Row[] = [...rowsReadonly];
-    // console.log(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
+    // config.logger(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
 
-    console.log(`Logging in to instance: ${config.instance}`);
+    config.logger(`Logging in to instance: ${config.instance}`);
 
     const masto = await login({
       url: config.instance,
@@ -36,18 +39,18 @@ export async function importLists(config: Config, csvString: string) {
     const preExistingLists = cloudListsInitial.filter(list => inputLists.includes(list.title));
     const newListNames = _.difference(inputLists, preExistingLists.map(list => list.title));
 
-    console.log("Found pre-existing lists: ", preExistingLists.map(l => l.title));
+    config.logger("Found pre-existing lists: ", preExistingLists.map(l => l.title));
 
     const newLists = await Promise.all(newListNames.map(title => { // TODO: Batch this
-      console.log(`Creating list "${title}"`);
+      config.logger(`Creating list "${title}"`);
       return masto.lists.create({ title })
     }));
 
     const allLists = [...preExistingLists, ...newLists];
 
-    // console.log("preExistingLists:", preExistingLists, "inputLists:", inputLists, "newListNames:", newListNames, 'allLists:', allLists);
+    // config.logger("preExistingLists:", preExistingLists, "inputLists:", inputLists, "newListNames:", newListNames, 'allLists:', allLists);
 
-    console.log(`Loaded ${rows.length} account candidates`);
+    config.logger(`Loaded ${rows.length} account candidates`);
     
     // Remove rows for accounts that were already on the list
     for (const list of allLists) {
@@ -75,38 +78,38 @@ export async function importLists(config: Config, csvString: string) {
         const accountAddress = accounts.find(x => x.id === relationship.id)?.acct;
         assertOk(accountAddress);
         _.remove(rows, row => row[1] === accountAddress);
-        console.log(`You are not following ${accountAddress}, removing this account.`);
+        config.logger(`You are not following ${accountAddress}, removing this account.`);
       }
     }
 
-    console.log(`Cleaned account candidates, ${rows.length} accounts remain.`);
+    config.logger(`Cleaned account candidates, ${rows.length} accounts remain.`);
 
     const accountsByList = _.groupBy(rows, row => row[0]);
-    // console.log('accountsByList:', accountsByList); 
+    // config.logger('accountsByList:', accountsByList); 
 
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
       const accountIds = rowsForAccount.map(row => {
         const account = accounts.find(x => x.acct === row[1]);
-        if (!account) console.log(`Unable to find cached account for '${row[1]}', skipping.`);
+        if (!account) config.logger(`Unable to find cached account for '${row[1]}', skipping.`);
         return account?.id;
       })
       .filter((x): x is string => x !== undefined);
 
-      // console.log(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
+      // config.logger(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
 
       // Add accounts to list
       const list = allLists.find(l => l.title === listName);
       assertOk(list)
       try {
-        console.log(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
+        config.logger(`Adding ${accountIds.length} accounts to List "${list.title}": ${rowsForAccount.map(row => row[1]).join(",")}`);
         await masto.lists.addAccount(list.id, { accountIds });
       } catch (e) {
         console.error(`💥 Error adding accounts to list "${list.title}":`, e);
       }
     }
 
-    console.log("Done.");
+    config.logger("Done.");
   } catch (e: any) {
     if (typeof e === 'object' && e !== null && 'name' in e && e.name === "MastoRateLimitError") { // instanceof check doesn't work, sus
       const rateError = e as MastoRateLimitError;
