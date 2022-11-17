@@ -82,6 +82,14 @@ export async function importLists(config: Config, csvString: string) {
       }
     }
 
+    // Remove suspended accounts
+    for (const account of accounts) {
+      if (account.suspended) {
+        config.logger(`Account ${account.acct} is suspended, removing this account.`);
+        _.remove(rows, row => row[1] === account.acct);
+      }
+    }
+
     config.logger(`Cleaned account candidates, ${rows.length} accounts remain.`);
 
     const accountsByList = _.groupBy(rows, row => row[0]);
