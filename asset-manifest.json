@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/masto-list-importer/static/css/main.11330b43.css",
-    "main.js": "/masto-list-importer/static/js/main.4c3b553b.js",
+    "main.js": "/masto-list-importer/static/js/main.fa470ddb.js",
     "static/js/787.361a7df4.chunk.js": "/masto-list-importer/static/js/787.361a7df4.chunk.js",
     "index.html": "/masto-list-importer/index.html",
     "main.11330b43.css.map": "/masto-list-importer/static/css/main.11330b43.css.map",
-    "main.4c3b553b.js.map": "/masto-list-importer/static/js/main.4c3b553b.js.map",
+    "main.fa470ddb.js.map": "/masto-list-importer/static/js/main.fa470ddb.js.map",
     "787.361a7df4.chunk.js.map": "/masto-list-importer/static/js/787.361a7df4.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.11330b43.css",
-    "static/js/main.4c3b553b.js"
+    "static/js/main.fa470ddb.js"
   ]
 }
