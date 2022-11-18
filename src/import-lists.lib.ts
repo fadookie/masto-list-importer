@@ -101,14 +101,21 @@ export async function importLists(config: Config, csvString: string) {
     const accountsByList = _.groupBy(rows, row => row[0]);
     // config.logger('accountsByList:', accountsByList); 
 
+    const userAccount = await masto.accounts.verifyCredentials();
+    const instanceHostname = userAccount.url
+      .replace("http://", "",)
+      .replace("https://", "",)
+      .split("/")[0];
+
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
       const accountIds = rowsForAccount.map(row => {
-        const account = accounts.find(x => x.acct === row[1]);
+        const acct = row[1].replace(`@${instanceHostname}`, "");
+        const account = accounts.find(x => x.acct === acct);
         if (!account) config.logger(`Unable to find cached account for '${row[1]}', skipping.`);
         return account?.id;
       })
-      .filter((x): x is string => x !== undefined);
+      .filter((accountId): accountId is string => accountId !== undefined);
 
       // config.logger(`[${listName}] Got new accounts:`, accounts.map(a => a.acct), " accountIds:", accountIds, " lists:", cloudListsInitial);
 
