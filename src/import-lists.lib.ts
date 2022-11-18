@@ -18,7 +18,7 @@ export async function importLists(config: Config, csvString: string) {
   try {
     const parser = new Parser();
     const rowsReadonly = parser.parse(csvString);
-    const rows: Row[] = [...rowsReadonly];
+    const rows: Row[] = [..._.cloneDeep(rowsReadonly)];
     // config.logger(`Read csv file at '${csvPath}', csvString:`, csvString, "rows:", rows);
 
     config.logger(`Logging in to instance: ${config.instance}`);
@@ -28,11 +28,23 @@ export async function importLists(config: Config, csvString: string) {
       accessToken: config.access_token,
     });
 
+    // Fix up account addresses for local instance to not have instance hostname
+    const userAccount = await masto.accounts.verifyCredentials();
+    const instanceHostname = userAccount.url
+      .replace("http://", "",)
+      .replace("https://", "",)
+      .split("/")[0];
+
+    for(const row of rows) {
+      row[1] = row[1].replace(`@${instanceHostname}`, "");
+    }
+
+    // Start processing lists
     const inputLists = _.chain(rows)
       .map(row => row[0])
       .uniq()
       .value();
-    const inputAddresses = rows.map(row => row[1]);
+    // const inputAddresses = rows.map(row => row[1]);
     
     // Create any missing lists
     const cloudListsInitial = await masto.lists.fetchAll();
@@ -101,17 +113,10 @@ export async function importLists(config: Config, csvString: string) {
     const accountsByList = _.groupBy(rows, row => row[0]);
     // config.logger('accountsByList:', accountsByList); 
 
-    const userAccount = await masto.accounts.verifyCredentials();
-    const instanceHostname = userAccount.url
-      .replace("http://", "",)
-      .replace("https://", "",)
-      .split("/")[0];
-
     for (const [listName, rowsForAccount] of Object.entries(accountsByList)) {
       // Look up account IDs of remaining accounts on the list
       const accountIds = rowsForAccount.map(row => {
-        const acct = row[1].replace(`@${instanceHostname}`, "");
-        const account = accounts.find(x => x.acct === acct);
+        const account = accounts.find(x => x.acct === row[1]);
         if (!account) config.logger(`Unable to find cached account for '${row[1]}', skipping.`);
         return account?.id;
       })
