@@ -1,4 +1,4 @@
-import { login, MastoRateLimitError } from 'masto';
+import { login, Account, MastoRateLimitError } from 'masto';
 import Parser, { Row } from '@gregoranders/csv';
 import _ from 'lodash';
 
@@ -66,11 +66,17 @@ export async function importLists(config: Config, csvString: string) {
     }
 
     // Remove rows for accounts that the user isn't following
-    const accounts = await Promise.all(rows.map(async (row) => { // TODO: batch these requests
-      const account = await masto.accounts.lookup({ acct: row[1] }); // TODO: optimize by using cached account object if it was already in memory
-      assertOk(account);
-      return account;
-    }));
+    const accounts = (await Promise.all(rows.map(async (row) => { // TODO: batch these requests
+      try {
+        const account = await masto.accounts.lookup({ acct: row[1] }); // TODO: optimize by using cached account object if it was already in memory
+        assertOk(account);
+        return account;
+      } catch (e) {
+        config.logger(`💥 Lookup failed for account: "${row[1]}", Error:`, e);
+        return null;
+      }
+    })))
+    .filter((x): x is Account => x !== null);
 
     const relationships = await masto.accounts.fetchRelationships(accounts.map(account => account.id));
     for (const relationship of relationships) {
